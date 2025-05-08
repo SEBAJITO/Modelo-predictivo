@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Formulario de Inspección</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f2f2f2;
+            padding: 20px;
+        }
+        h2 {
+            text-align: center;
+            text-decoration: underline;
+        }
+        form {
+            background-color: #fff;
+            padding: 25px;
+            border-radius: 10px;
+            max-width: 800px;
+            margin: auto;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        label {
+            font-weight: bold;
+            display: block;
+            margin-top: 10px;
+        }
+        input, select, textarea {
+            margin-bottom: 10px;
+            padding: 6px;
+            width: 100%;
+            max-width: 500px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        .danos-entry {
+            border: 1px solid #ddd;
+            padding: 15px;
+            margin-top: 15px;
+            background-color: #f9f9f9;
+            border-radius: 6px;
+        }
+        button {
+            margin-top: 15px;
+            padding: 10px 20px;
+            font-size: 16px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+    </style>
+    <script>
+        let contadorDanos = 0;
+
+        async function fetchCategoriasParaSelect(selectCategoria, selectSubcategoria) {
+            const response = await fetch('/obtener_categorias');
+            const data = await response.json();
+            selectCategoria.innerHTML = "<option value=''>Seleccione</option>";
+            data.forEach(categoria => {
+                let option = document.createElement("option");
+                option.value = categoria;
+                option.text = categoria;
+                selectCategoria.appendChild(option);
+            });
+
+            selectCategoria.addEventListener("change", async () => {
+                const response = await fetch(`/obtener_subcategorias?categoria=${selectCategoria.value}`);
+                const subcategorias = await response.json();
+                selectSubcategoria.innerHTML = "<option value=''>Seleccione</option>";
+                subcategorias.forEach(sub => {
+                    let opt = document.createElement("option");
+                    opt.value = sub;
+                    opt.text = sub;
+                    selectSubcategoria.appendChild(opt);
+                });
+            });
+        }
+
+        function calcularArea(input) {
+            const contenedor = input.closest('.danos-entry');
+            const largo = parseFloat(contenedor.querySelector(".largo").value) || 0;
+            const ancho = parseFloat(contenedor.querySelector(".ancho").value) || 0;
+            const areaInput = contenedor.querySelector(".cantidad");
+            if (largo > 0 && ancho > 0 && (!areaInput.value || areaInput.value === "0")) {
+                areaInput.value = (largo * ancho).toFixed(2);
+            }
+        }
+
+        async function agregarDano() {
+            let contenedor = document.getElementById("danos");
+            let nuevoDano = document.createElement("div");
+            nuevoDano.classList.add("danos-entry");
+
+            nuevoDano.innerHTML = `
+                <label>Categoría:</label>
+                <select class="categoria" name="categoria[]" required></select>
+
+                <label>Revestimiento:</label>
+                <select class="subcategoria" name="subcategoria[]" required></select>
+
+                <label>Ubicación del Daño:</label>
+                <input type="text" name="ubicacion[]" required>
+
+                <label>Largo (m):</label>
+                <input type="number" class="largo" step="0.01" oninput="calcularArea(this)">
+                
+                <label>Ancho (m):</label>
+                <input type="number" class="ancho" step="0.01" oninput="calcularArea(this)">
+
+                <label>Área afectada (m²):</label>
+                <input type="number" name="cantidad[]" class="cantidad" step="0.01" required>
+
+                <label>Subir Imágenes (puedes seleccionar varias):</label>
+                <input type="file" name="imagen_${contadorDanos}[]" accept="image/*" multiple>
+            `;
+
+            contenedor.appendChild(nuevoDano);
+            const selectCategoria = nuevoDano.querySelector(".categoria");
+            const selectSubcategoria = nuevoDano.querySelector(".subcategoria");
+            await fetchCategoriasParaSelect(selectCategoria, selectSubcategoria);
+
+            contadorDanos++;
+        }
+    </script>
+</head>
+<body>
+    <h2>Formulario de Inspección</h2>
+    <form action="/generar_pdf" method="POST" enctype="multipart/form-data">
+        <label>Dirección:</label>
+        <input type="text" name="direccion" required>
+
+        <label>Nombre del Afectado:</label>
+        <input type="text" name="afectado" required>
+
+        <label>Fecha:</label>
+        <input type="date" name="fecha" required>
+
+        <label>N° Caso:</label>
+        <input type="text" name="nro_caso" required>
+
+        <label>Descripción de los Hechos:</label>
+        <textarea name="descripcion" rows="4" required></textarea>
+
+        <div id="danos"></div>
+
+        <button type="button" onclick="agregarDano()">Agregar Otro Daño</button><br><br>
+        <button type="submit">Generar PDF</button>
+    </form>
+    <script>agregarDano();</script>
+</body>
+</html>
