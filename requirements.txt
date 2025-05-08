@@ -4,3 +4,4 @@ fpdf
 joblib
 requests
 openpyxl
+gunicorn
