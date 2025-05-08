@@ -184,3 +184,8 @@ def generar_pdf():
 # NO ES NECESARIO EN RENDER, PERO ÚTIL LOCALMENTE
 if __name__ == '__main__':
     app.run(debug=True)
+from flask import render_template
+
+@app.route("/formulario")
+def formulario():
+    return render_template("formulario.html")
