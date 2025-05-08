@@ -5,3 +5,4 @@ joblib
 requests
 openpyxl
 gunicorn
+scikit-learn
